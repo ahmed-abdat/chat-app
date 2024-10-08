@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { updateProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth, db, storage } from '../firebase';
+import {  db, storage } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Save, Upload, Loader } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';

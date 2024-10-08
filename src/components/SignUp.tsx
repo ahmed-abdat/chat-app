@@ -5,6 +5,7 @@ import { auth, db } from '../firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { MessageCircle, Loader } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { AuthError } from 'firebase/auth';
 
 const SignUp: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -17,9 +18,31 @@ const SignUp: React.FC = () => {
 
   useEffect(() => {
     if (currentUser) {
-      navigate('/');
+      navigate('/chat');
     }
   }, [currentUser, navigate]);
+
+  const handleError = (error: AuthError) => {
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        setError('An account with this email already exists. Please use a different email or try logging in.');
+        break;
+      case 'auth/invalid-email':
+        setError('Invalid email address. Please enter a valid email.');
+        break;
+      case 'auth/weak-password':
+        setError('Password is too weak. Please use a stronger password.');
+        break;
+      case 'auth/network-request-failed':
+        setError('Network error. Please check your internet connection and try again.');
+        break;
+      case 'auth/too-many-requests':
+        setError('Too many requests. Please try again later.');
+        break;
+      default:
+        setError(`An unexpected error occurred: ${error.message}`);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,9 +63,9 @@ const SignUp: React.FC = () => {
         online: true
       });
 
-      navigate('/');
+      // Navigation will be handled by the useEffect hook
     } catch (error) {
-      setError('Failed to create an account');
+      handleError(error as AuthError);
     } finally {
       setLoading(false);
     }

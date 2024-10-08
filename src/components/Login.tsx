@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, AuthError } from 'firebase/auth';
 import { auth, googleProvider, db } from '../firebase';
 import { MessageCircle, Loader } from 'lucide-react';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -16,9 +16,41 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (currentUser) {
-      navigate('/');
+      navigate('/chat');
     }
   }, [currentUser, navigate]);
+
+  const handleError = (error: AuthError) => {
+    switch (error.code) {
+      case 'auth/invalid-login-credentials':
+      case 'auth/invalid-credential':
+        setError('Invalid email or password. Please check your credentials and try again.');
+        break;
+      case 'auth/user-not-found':
+        setError('No account found with this email. Please check your email or sign up.');
+        break;
+      case 'auth/wrong-password':
+        setError('Incorrect password. Please try again.');
+        break;
+      case 'auth/invalid-email':
+        setError('Invalid email address. Please enter a valid email.');
+        break;
+      case 'auth/user-disabled':
+        setError('This account has been disabled. Please contact support.');
+        break;
+      case 'auth/too-many-requests':
+        setError('Too many failed login attempts. Please try again later.');
+        break;
+      case 'auth/network-request-failed':
+        setError('Network error. Please check your internet connection and try again.');
+        break;
+      case 'auth/popup-closed-by-user':
+        setError('Google sign-in was cancelled. Please try again.');
+        break;
+      default:
+        setError(`An unexpected error occurred: ${error.message}`);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,9 +58,9 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/');
+      // Navigation will be handled by the useEffect hook
     } catch (error) {
-      setError('Failed to log in');
+      handleError(error as AuthError);
     } finally {
       setLoading(false);
     }
@@ -46,9 +78,9 @@ const Login: React.FC = () => {
         lastSeen: serverTimestamp(),
         online: true
       }, { merge: true });
-      navigate('/');
+      // Navigation will be handled by the useEffect hook
     } catch (error) {
-      setError('Failed to sign in with Google');
+      handleError(error as AuthError);
     } finally {
       setLoading(false);
     }

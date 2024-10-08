@@ -1,29 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
 import { X } from 'lucide-react';
 
 interface UserProfilePreviewProps {
   displayName: string;
+  lastSeen: { seconds: number; nanoseconds: number } | string | null;
+  isOnline: boolean;
   photoURL: string;
   email: string;
   uid: string;
   onClose: () => void;
 }
 
-const UserProfilePreview: React.FC<UserProfilePreviewProps> = ({ displayName, photoURL, email, uid, onClose }) => {
-  const [isOnline, setIsOnline] = useState(false);
+const UserProfilePreview: React.FC<UserProfilePreviewProps> = ({ displayName, lastSeen, isOnline, photoURL, email, onClose }) => {
 
-  useEffect(() => {
-    const presenceRef = doc(db, 'presence', uid);
-    const unsubscribe = onSnapshot(presenceRef, (doc) => {
-      if (doc.exists()) {
-        setIsOnline(doc.data().online);
-      }
-    });
 
-    return () => unsubscribe();
-  }, [uid]);
+  const formatLastSeen = (lastSeen: { seconds: number; nanoseconds: number } | string | null): string => {
+    if (!lastSeen) {
+      return "";
+    }
+    if (typeof lastSeen === 'string') {
+      return lastSeen;
+    }
+    const date = new Date(lastSeen.seconds * 1000);
+    return date.toLocaleString();
+  };
+
+  const formattedLastSeen = formatLastSeen(lastSeen);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
@@ -42,8 +43,11 @@ const UserProfilePreview: React.FC<UserProfilePreviewProps> = ({ displayName, ph
           <h3 className="text-xl font-semibold mb-2">{displayName}</h3>
           <p className="text-gray-600">{email}</p>
           <p className={`mt-2 ${isOnline ? 'text-green-500' : 'text-gray-500'}`}>
-            {isOnline ? 'Online' : 'Offline'}
+            status: {isOnline ? "Online" : "Offline"}
           </p>
+          {formattedLastSeen && (
+            <p className="text-gray-600">last seen: {formattedLastSeen}</p>
+          )}
         </div>
       </div>
     </div>
