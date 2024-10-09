@@ -1,27 +1,30 @@
 import { X } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface UserProfilePreviewProps {
   displayName: string;
-  lastSeen: { seconds: number; nanoseconds: number } | string | null;
-  isOnline: boolean;
+  lastSeen: { seconds: number; nanoseconds: number } | null;
+  online: boolean;
   photoURL: string;
   email: string;
   uid: string;
   onClose: () => void;
 }
 
-const UserProfilePreview: React.FC<UserProfilePreviewProps> = ({ displayName, lastSeen, isOnline, photoURL, email, onClose }) => {
-
-
-  const formatLastSeen = (lastSeen: { seconds: number; nanoseconds: number } | string | null): string => {
+const UserProfilePreview: React.FC<UserProfilePreviewProps> = ({ 
+  displayName, 
+  lastSeen, 
+  online, 
+  photoURL, 
+  email, 
+  onClose 
+}) => {
+  const formatLastSeen = (lastSeen: { seconds: number; nanoseconds: number } | null): string => {
     if (!lastSeen) {
-      return "";
-    }
-    if (typeof lastSeen === 'string') {
-      return lastSeen;
+      return "Unknown";
     }
     const date = new Date(lastSeen.seconds * 1000);
-    return date.toLocaleString();
+    return format(date, "MMMM d, yyyy 'at' HH:mm:ss");
   };
 
   const formattedLastSeen = formatLastSeen(lastSeen);
@@ -38,16 +41,14 @@ const UserProfilePreview: React.FC<UserProfilePreviewProps> = ({ displayName, la
         <div className="flex flex-col items-center">
           <div className="relative">
             <img src={photoURL} alt={`${displayName}'s avatar`} className="w-24 h-24 rounded-full mb-4" />
-            <div className={`absolute bottom-0 right-0 w-4 h-4 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+            <div className={`absolute bottom-0 right-0 w-4 h-4 rounded-full ${online ? 'bg-green-500' : 'bg-gray-500'}`}></div>
           </div>
           <h3 className="text-xl font-semibold mb-2">{displayName}</h3>
           <p className="text-gray-600">{email}</p>
-          <p className={`mt-2 ${isOnline ? 'text-green-500' : 'text-gray-500'}`}>
-            status: {isOnline ? "Online" : "Offline"}
+          <p className={`mt-2 ${online ? 'text-green-500' : 'text-gray-500'}`}>
+            Status: {online ? "Online" : "Offline"}
           </p>
-          {formattedLastSeen && (
-            <p className="text-gray-600">last seen: {formattedLastSeen}</p>
-          )}
+          <p className="text-gray-600 mt-2">Last seen: {formattedLastSeen}</p>
         </div>
       </div>
     </div>
