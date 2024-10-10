@@ -10,15 +10,10 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { type CarouselApi } from "@/components/ui/carousel";
-
-interface MediaItem {
-  url: string;
-  text: string;
-  type: 'image' | 'video';
-}
+import { ChatMediaItem } from '../types/chat';
 
 interface MediaCarouselProps {
-  media: MediaItem[];
+  media: ChatMediaItem[];
   initialIndex: number;
   onClose: () => void;
 }
@@ -82,6 +77,10 @@ const MediaCarousel: React.FC<MediaCarouselProps> = ({ media, initialIndex, onCl
                           {item.text}
                         </p>
                       )}
+                      <div className="mt-2 flex items-center">
+                        <img src={item.userAvatar} alt={item.userName} className="w-6 h-6 rounded-full mr-2" />
+                        <span className="text-sm text-gray-600">{item.userName}</span>
+                      </div>
                     </div>
                   </CarouselItem>
                 ))}

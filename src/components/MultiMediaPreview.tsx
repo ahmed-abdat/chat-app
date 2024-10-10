@@ -26,6 +26,7 @@ const MultiMediaPreview: React.FC<MultiMediaPreviewProps> = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const textareaRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -44,13 +45,24 @@ const MultiMediaPreview: React.FC<MultiMediaPreviewProps> = ({
     const newCaptions = [...captions];
     newCaptions[index] = text;
     setCaptions(newCaptions);
-    setShowEmojiPicker(null); // Close emoji picker when typing
   };
 
   const handleEmojiClick = (emojiData: EmojiClickData, index: number) => {
-    const newCaptions = [...captions];
-    newCaptions[index] = (newCaptions[index] || "") + emojiData.emoji;
-    setCaptions(newCaptions);
+    const textarea = textareaRefs.current[index];
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newText = captions[index].substring(0, start) + emojiData.emoji + captions[index].substring(end);
+      const newCaptions = [...captions];
+      newCaptions[index] = newText;
+      setCaptions(newCaptions);
+      
+      // Set cursor position after the inserted emoji
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + emojiData.emoji.length;
+        textarea.focus();
+      }, 0);
+    }
   };
 
   const handleSend = () => {
@@ -105,18 +117,18 @@ const MultiMediaPreview: React.FC<MultiMediaPreviewProps> = ({
                   <X size={16} />
                 </button>
                 <div className="mt-2 relative">
-                  <input
-                    type="text"
+                  <textarea
+                    ref={el => textareaRefs.current[index] = el}
                     value={captions[index]}
                     onChange={(e) => handleCaptionChange(index, e.target.value)}
-                    onFocus={() => setShowEmojiPicker(null)}
                     placeholder="Add a caption..."
-                    className="w-full p-2 pr-10 border border-gray-300 rounded-md"
+                    className="w-full p-2 pr-10 border border-gray-300 rounded-md resize-none"
+                    style={{ height: '80px', overflowY: 'auto' }}
                   />
                   <button
                     type="button"
                     onClick={() => toggleEmojiPicker(index)}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
                   >
                     <Smile className="h-5 w-5" />
                   </button>

@@ -30,4 +30,14 @@ export interface MediaItem {
   type: 'image' | 'video';
   url: string;
   text: string;
+  userName: string;
+  userAvatar: string;
+}
+
+export interface ChatMediaItem {
+  url: string;
+  text: string;
+  type: 'image' | 'video';
+  userName: string;
+  userAvatar: string;
 }

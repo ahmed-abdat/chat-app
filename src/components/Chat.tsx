@@ -7,7 +7,7 @@ import { ChevronDown } from "lucide-react";
 import UserProfilePreview from "./UserProfilePreview";
 import MediaCarousel from "./MediaCarousel";
 import MultiMediaPreview from "./MultiMediaPreview";
-import { Message, UserData, MediaItem } from "../types/chat";
+import { Message, UserData, MediaItem, ChatMediaItem } from "../types/chat";
 import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
 
@@ -25,7 +25,7 @@ const Chat: React.FC = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
   const [showMultiMediaPreview, setShowMultiMediaPreview] = useState(false);
-  const [carouselMedia, setCarouselMedia] = useState<MediaItem[]>([]);
+  const [carouselMedia, setCarouselMedia] = useState<ChatMediaItem[]>([]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,26 +53,27 @@ const Chat: React.FC = () => {
     const q = query(collection(db, "messages"), orderBy("createdAt", "desc"), limit(50));
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const fetchedMessages: Message[] = [];
-      const mediaItems: MediaItem[] = [];
+      const mediaItems: ChatMediaItem[] = [];
       const userPromises: Promise<void>[] = [];
 
-      querySnapshot.forEach((doc) => {
+      for (const doc of querySnapshot.docs) {
         const message = { id: doc.id, ...doc.data() } as Message;
         fetchedMessages.push(message);
         if (message.mediaUrl) {
+          const userData = await fetchUserData(message.uid);
           mediaItems.push({
-            file: new File([], "placeholder"),
-            preview: message.mediaUrl,
-            type: message.mediaType || "image",
             url: message.mediaUrl,
-            text: message.text,
+            text: message.text || "",
+            type: message.mediaType || "image",
+            userName: userData?.displayName || "Unknown User",
+            userAvatar: userData?.photoURL || "https://via.placeholder.com/40",
           });
         }
         
         if (!usersData[message.uid]) {
           userPromises.push(fetchUserData(message.uid).then());
         }
-      });
+      }
 
       await Promise.all(userPromises);
 
@@ -124,7 +125,9 @@ const Chat: React.FC = () => {
         preview: URL.createObjectURL(file),
         type: file.type.startsWith("image/") ? "image" : "video",
         url: URL.createObjectURL(file),
-        text: index === 0 ? newMessage : "", // Only set text for the first item
+        text: index === 0 ? newMessage : "",
+        userName: currentUser?.displayName || "Unknown User",
+        userAvatar: currentUser?.photoURL || "https://via.placeholder.com/40",
       }));
       setSelectedMedia((prev) => [...prev, ...newMediaItems]);
       setShowMultiMediaPreview(true);

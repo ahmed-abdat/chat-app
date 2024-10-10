@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { cn } from '../lib/utils';
 import {
@@ -15,6 +15,8 @@ interface MediaItem {
   url: string;
   text: string;
   type: 'image' | 'video';
+  userName: string;
+  userAvatar: string;
 }
 
 interface MediaCarouselProps {
@@ -25,9 +27,11 @@ interface MediaCarouselProps {
 
 const MediaCarousel: React.FC<MediaCarouselProps> = ({ media, initialIndex, onClose }) => {
   const [api, setApi] = useState<CarouselApi>();
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (api) {
       api.scrollTo(initialIndex);
     }
@@ -46,6 +50,23 @@ const MediaCarousel: React.FC<MediaCarouselProps> = ({ media, initialIndex, onCl
     };
   }, [onClose]);
 
+  useEffect(() => {
+    if (api) {
+      api.on("select", () => {
+        const selectedIndex = api.selectedScrollSnap();
+        setCurrentIndex(selectedIndex);
+        
+        // Stop all videos except the current one
+        videoRefs.current.forEach((videoRef, index) => {
+          if (videoRef && index !== selectedIndex) {
+            videoRef.pause();
+            videoRef.currentTime = 0;
+          }
+        });
+      });
+    }
+  }, [api]);
+
   if (!media || media.length === 0) {
     return null;
   }
@@ -55,33 +76,41 @@ const MediaCarousel: React.FC<MediaCarouselProps> = ({ media, initialIndex, onCl
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-75 z-50" />
         <Dialog.Content className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          <div ref={carouselRef} className="relative w-full max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-            <Dialog.Title className="sr-only">Media Carousel</Dialog.Title>
+          <div ref={carouselRef} className="relative w-full max-w-3xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
             <Carousel className="w-full" setApi={setApi}>
               <CarouselContent>
                 {media.map((item, index) => (
                   <CarouselItem key={index}>
-                    <div className="flex flex-col items-center justify-center h-[80vh]">
-                      {item.type === 'image' ? (
-                        <img
-                          src={item.url}
-                          alt={`Image ${index + 1}`}
-                          className="max-w-full max-h-[70vh] object-contain"
-                        />
-                      ) : (
-                        <video
-                          src={item.url}
-                          controls
-                          className="max-w-full max-h-[70vh] object-contain"
-                        >
-                          Your browser does not support the video tag.
-                        </video>
-                      )}
-                      {item.text && (
-                        <p className="mt-4 text-center text-gray-700 max-w-lg">
-                          {item.text}
-                        </p>
-                      )}
+                    <div className="flex flex-col p-4">
+                      <div className="flex justify-center items-center bg-gray-100 rounded-lg overflow-hidden" style={{ height: '60vh' }}>
+                        {item.type === 'image' ? (
+                          <img
+                            src={item.url}
+                            alt={`Image ${index + 1}`}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        ) : (
+                          <video
+                            ref={el => videoRefs.current[index] = el}
+                            src={item.url}
+                            controls
+                            className="max-w-full max-h-full object-contain"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        )}
+                      </div>
+                      <div className="mt-4">
+                        <div className="flex items-center space-x-3">
+                          <img src={item.userAvatar} alt={`${item.userName}'s avatar`} className="w-10 h-10 rounded-full object-cover" />
+                          <span className="font-semibold text-gray-800">{item.userName}</span>
+                        </div>
+                        {item.text && (
+                          <p className="text-gray-600 text-sm mt-2 break-words">
+                            {item.text}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </CarouselItem>
                 ))}

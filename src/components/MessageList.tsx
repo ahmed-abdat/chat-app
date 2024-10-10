@@ -25,26 +25,31 @@ const MessageList: React.FC<MessageListProps> = ({
     return format(timestamp.toDate(), "HH:mm");
   };
 
-  const renderMedia = (message: Message) => {
+  const renderMedia = (message: Message, isCurrentUser: boolean) => {
+    const mediaClass = isCurrentUser ? "bg-white rounded-lg" : "";
     if (message.mediaType === 'video') {
       return (
-        <video
-          src={message.mediaUrl}
-          className="mt-2 max-w-full h-auto rounded-lg cursor-pointer"
-          controls
-          onClick={() => handleMediaClick(message.mediaUrl!)}
-        >
-          Your browser does not support the video tag.
-        </video>
+        <div className={mediaClass}>
+          <video
+            src={message.mediaUrl}
+            className="mt-2 max-w-full h-auto rounded-lg cursor-pointer"
+            controls
+            onClick={() => handleMediaClick(message.mediaUrl!)}
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
       );
     } else {
       return (
-        <img
-          src={message.mediaUrl}
-          alt="Shared media"
-          className="mt-2 max-w-full h-auto rounded-lg cursor-pointer"
-          onClick={() => handleMediaClick(message.mediaUrl!)}
-        />
+        <div className={mediaClass}>
+          <img
+            src={message.mediaUrl}
+            alt="Shared media"
+            className="mt-2 max-w-full h-auto rounded-lg cursor-pointer"
+            onClick={() => handleMediaClick(message.mediaUrl!)}
+          />
+        </div>
       );
     }
   };
@@ -59,18 +64,15 @@ const MessageList: React.FC<MessageListProps> = ({
           online: false,
           lastSeen: null,
         };
+        const isCurrentUser = message.uid === currentUser?.uid;
         return (
           <div
             key={message.id}
-            className={`flex ${
-              message.uid === currentUser?.uid ? "justify-end" : "justify-start"
-            }`}
+            className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
           >
             <div
               className={`flex items-end space-x-2 max-w-xs lg:max-w-md ${
-                message.uid === currentUser?.uid
-                  ? "flex-row-reverse space-x-reverse"
-                  : "flex-row"
+                isCurrentUser ? "flex-row-reverse space-x-reverse" : "flex-row"
               }`}
             >
               <div className="relative flex-shrink-0">
@@ -83,17 +85,15 @@ const MessageList: React.FC<MessageListProps> = ({
               </div>
               <div
                 className={`px-4 py-2 rounded-lg ${
-                  message.uid === currentUser?.uid
-                    ? message.mediaUrl
-                      ? "bg-white text-gray-900"
-                      : "bg-indigo-500 text-white"
+                  isCurrentUser
+                    ? "bg-indigo-500 text-white"
                     : "bg-white text-gray-900"
                 }`}
               >
                 <p className="font-semibold text-sm">
-                  {message.uid === currentUser?.uid ? "You" : userData.displayName}
+                  {isCurrentUser ? "You" : userData.displayName}
                 </p>
-                {message.mediaUrl && renderMedia(message)}
+                {message.mediaUrl && renderMedia(message, isCurrentUser)}
                 {message.text && <p className="mt-1">{message.text}</p>}
                 <p className="text-xs opacity-75 mt-1">
                   {formatMessageDate(message.createdAt)}
